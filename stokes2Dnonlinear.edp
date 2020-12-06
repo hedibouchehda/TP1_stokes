@@ -1,0 +1,108 @@
+
+//Fichier d'erreur  
+ofstream errpasfile("erreur_P2_non_linear/error_pas_1_non_linear.txt") ; 
+ofstream errpenalfile("erreur_P2_non_linear/error_penal_1_non_linear.txt") ; 
+
+border Gamma1(t=0,1){x=t ; y=0;} ; 
+border Gamma2(t=0,1){x=1-t;y=t;} ; 
+border Gamma3(t=0,1){x=0; y=1-t;} ; 
+
+
+
+for (int k=0 ; k<4 ; k++ ) 
+{
+    int nn = 10*2^k ;
+    mesh Th = buildmesh(Gamma1(nn)+Gamma2(nn)+Gamma3(nn)) ;
+
+    func f1 = 2*x-2 ; 
+    func f2 = 2*y+2 ;//	***	DEFINE FUNCTION VOL:
+
+    // Fesp);
+    fespace Uh(Th, P2);
+    Uh  u, v ;
+    Uh uu, vv; 
+    Uh ue , ve ;// les solution exactes en vitesses
+    ue = x^2 ; ve = -y^2 ; 
+
+    fespace Ph(Th, P1);
+    Ph p, pp; 
+    Ph pe ; // la pression exacte 
+    pe = x^2+y^2 - 2* int2d(Th)(x^2+y^2) ; 
+    
+      solve stokes ([u, v, p], [uu, vv, pp],solver = UMFPACK)
+        = int2d(Th)(
+            dx(u)*dx(uu)
+            + dy(u)*dy(uu)
+            + dx(v)*dx(vv)
+            + dy(v)*dy(vv)
+            + dx(p)*uu
+            + dy(p)*vv
+            + pp*(dx(u) + dy(v))  -1e-6*p*pp
+         )
+	    +int2d(Th)(f1*uu+f2*vv)
+    + on(Gamma1, Gamma2, Gamma3, u=x^2, v=-y^2  );
+
+    //erreurs H1 
+    real errH1U , errH1P ;
+    errH1U=sqrt( int2d(Th)( (u-ue)^2+(v-ve)^2)
+                + int2d(Th)( (dx(u)-dx(ue))^2 + (dx(v)-dx(ve))^2 )
+                + int2d(Th)( (dy(u)-dy(ue))^2 + (dy(v)-dy(ve))^2 )
+                );
+    errH1P=sqrt( int2d(Th)( (p-pe)^2) 
+        + int2d(Th)( (dx(p)-dx(pe))^2 + (dy(p)-dy(pe))^2 )
+        );
+    
+    errpasfile <<1./nn<<" "<<errH1U<<" "<<errH1P<<endl ;
+}
+
+
+for (int k=6 ; k<11 ; k++ ) 
+{
+    int nn = 30 ;
+    real penal = 10.0^(-k) ; 
+    mesh Th = buildmesh(Gamma1(nn)+Gamma2(nn)+Gamma3(nn)) ;
+
+    func f1 = 2*x-2 ; 
+    func f2 = 2*y+2 ;//	***	DEFINE FUNCTION VOL:
+
+    // Fespace
+    
+    fespace Uh(Th, P2);
+    Uh  u, v ;
+    Uh uu, vv; 
+    Uh ue , ve ;// les solution exactes en vitesses
+    ue = x^2 ; ve = -y^2 ; 
+
+    fespace Ph(Th, P1);
+    Ph p, pp; 
+    Ph pe ; // la pression exacte 
+    pe = x^2+y^2 - 2* int2d(Th)(x^2+y^2) ; 
+    
+    // Problem
+    solve stokes ([u, v, p], [uu, vv, pp],solver = UMFPACK)
+        = int2d(Th)(
+            dx(u)*dx(uu)
+            + dy(u)*dy(uu)
+            + dx(v)*dx(vv)
+            + dy(v)*dy(vv)
+            + dx(p)*uu
+            + dy(p)*vv
+            + pp*(dx(u) + dy(v))  -penal*p*pp
+         )
+	    +int2d(Th)(f1*uu+f2*vv)
+    + on(Gamma1, Gamma2, Gamma3, u=x^2, v=-y^2  );
+
+    //erreurs H1 
+    real errH1U , errH1P ;
+    errH1U=sqrt( int2d(Th)( (u-ue)^2+(v-ve)^2)
+                + int2d(Th)( (dx(u)-dx(ue))^2 + (dx(v)-dx(ve))^2 )
+                + int2d(Th)( (dy(u)-dy(ue))^2 + (dy(v)-dy(ve))^2 )
+                );
+    errH1P=sqrt( int2d(Th)( (p-pe)^2) 
+        + int2d(Th)( (dx(p)-dx(pe))^2 + (dy(p)-dy(pe))^2 )
+        );
+    
+    errpenalfile <<penal<<" "<<errH1U<<" "<<errH1P<<endl ;
+}
+
+ 

@@ -1,0 +1,144 @@
+
+//Fichier d'erreur  
+ofstream errpasfileP2("erreur_P2/error_pas_1_P2.txt") ; 
+ofstream errpenalfileP2("erreur_P2/error_penal_1_P2.txt") ; 
+
+border Gamma1(t=0,1){x=t ; y=0;} ; 
+border Gamma2(t=0,1){x=1-t;y=t;} ; 
+border Gamma3(t=0,1){x=0; y=1-t;} ; 
+/*
+    int nn = 30 ;
+    mesh Th = buildmesh(Gamma1(nn)+Gamma2(nn)+Gamma3(nn)) ;
+
+    real f1=1.0,f2=1.0;//	***	DEFINE FUNCTION VOL:
+
+    // Fespace
+    fespace Uh(Th, P2);
+    Uh  u, v ;
+    Uh uu, vv; 
+    Uh ue , ve ;// les solution exactes en vitesses
+    ue = x ; ve = -y ; 
+
+    fespace Ph(Th, P2);
+    Ph p, pp; 
+    Ph pe ; // la pression exacte 
+    pe = x+y- 2* int2d(Th)(x+y) ; 
+    
+    // Problem
+    solve stokes ([u, v, p], [uu, vv, pp],solver = UMFPACK)
+        = int2d(Th)(
+            dx(u)*dx(uu)
+            + dy(u)*dy(uu)
+            + dx(v)*dx(vv)
+            + dy(v)*dy(vv)
+            + dx(p)*uu
+            + dy(p)*vv
+            + pp*(dx(u) + dy(v))  -1e-6*p*pp
+         )
+	    +int2d(Th)(f1*uu+f2*fespace Uh(Th, P2);olve_30_triangle_P2P2.eps");
+*/
+
+//Element P1/P2
+
+//plot(Th, wait=1, ps="Triangle_stokes.eps"); 
+//	***	DEFINE FUNCTION VOL:
+
+
+for (int k=0 ; k<4 ; k++ ) 
+{
+    int nn = 10*2^k ;
+    mesh Th = buildmesh(Gamma1(nn)+Gamma2(nn)+Gamma3(nn)) ;
+
+    real f1=1.0,f2=1.0;//	***	DEFINE FUNCTION VOL:
+
+    // Fespace
+    fespace Uh(Th, P2);
+    Uh  u, v ;
+    Uh uu, vv; 
+    Uh ue , ve ;// les solution exactes en vitesses
+    ue = x ; ve = -y ; 
+
+    fespace Ph(Th, P1);
+    Ph p, pp; 
+    Ph pe ; // la pression exacte 
+    pe = x+y- 2* int2d(Th)(x+y) ; 
+    
+    // Problem
+    solve stokes ([u, v, p], [uu, vv, pp],solver = UMFPACK)
+        = int2d(Th)(
+            dx(u)*dx(uu)
+            + dy(u)*dy(uu)
+            + dx(v)*dx(vv)
+            + dy(v)*dy(vv)
+            + dx(p)*uu
+            + dy(p)*vv
+            + pp*(dx(u) + dy(v))  -1e-6*p*pp
+         )
+	    +int2d(Th)(f1*uu+f2*vv)
+    + on(Gamma1, Gamma2, Gamma3, u=ue, v=ve  );
+
+    //erreurs H1 
+    real errH1U , errH1P ;
+    errH1U=sqrt( int2d(Th)( (u-ue)^2+(v-ve)^2)) + int2d(Th)( (dx(u)-dx(ue))^2+(dx(v)-dx(ve))^2 ) + int2d(Th)( (dy(u)-dy(ue))^2+(dy(v)-dy(ve))^2 );
+    errH1P=sqrt( int2d(Th)( (p-pe)^2) + int2d(Th)( (dx(p)-dx(pe))^2+(dy(p)-dy(pe))^2 ));
+    
+    errpasfileP2 <<1./nn<<" "<<errH1U<<" "<<errH1P<<endl ; 
+}
+
+real penal ; 
+//variation de la pénalisation 
+for (int k=6 ; k<11 ; k++ ) 
+{
+    int nn = 30 ; 
+    penal = 10.0^(-k) ; 
+    mesh Th = buildmesh(Gamma1(nn)+Gamma2(nn)+Gamma3(nn)) ;
+
+    real f1=1.0,f2=1.0;//	***	DEFINE FUNCTION VOL:
+
+    // Fespace
+    fespace Uh(Th, P2);
+    Uh  u, v ;
+    Uh uu, vv; 
+    Uh ue , ve ;// les solution exactes en vitesses
+    ue = x ; ve = -y ; 
+
+    fespace Ph(Th, P1);
+    Ph p, pp; 
+    Ph pe ; // la pression exacte 
+    pe = x+y- 2* int2d(Th)(x+y) ; 
+    
+    // Problem
+    solve stokes ([u, v, p], [uu, vv, pp],solver = UMFPACK)
+        = int2d(Th)(
+            dx(u)*dx(uu)
+            + dy(u)*dy(uu)
+            + dx(v)*dx(vv)
+            + dy(v)*dy(vv)
+            + dx(p)*uu
+            + dy(p)*vv
+            + pp*(dx(u) + dy(v))  -penal*p*pp
+         )
+	    +int2d(Th)(f1*uu+f2*vv)
+    + on(Gamma1, Gamma2, Gamma3, u=ue, v=ve  );
+
+    //erreurs H1 
+    real errH1U , errH1P ;
+    errH1U=sqrt( int2d(Th)( (u-ue)^2+(v-ve)^2)) + int2d(Th)( (dx(u)-dx(ue))^2+(dx(v)-dx(ve))^2 ) + int2d(Th)( (dy(u)-dy(ue))^2+(dy(v)-dy(ve))^2 );
+    errH1P=sqrt( int2d(Th)( (p-pe)^2) + int2d(Th)( (dx(p)-dx(pe))^2+(dy(p)-dy(pe))^2 ));
+    
+    errpenalfileP2 <<penal<<" "<<errH1U<<" "<<errH1P<<endl ;
+/*
+    if (k==10) 
+    {
+        plot([u,v],p, wait=1 , ps="solve_penal_10.eps" ) ; 
+    } 
+*/
+}
+
+
+
+
+// Plot
+//plot([u,v],p, wait=1 , ps="solve_30_triangle.eps"); 
+//plot([ue,ve],pe,wait=1)
+ 

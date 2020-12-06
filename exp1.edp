@@ -1,0 +1,45 @@
+ // Parameters
+int nn = 30;
+
+
+//mesh Th = square(nn, nn);
+
+//        ***        DEFINE FUNCTION VOL:
+
+real f1=0.0,f2=0.0;//        ***        DEFINE FUNCTION VOL:
+
+
+
+mesh Th = buildmesh(Gamma1(nn)+Gamma2(nn)+Gamma3(nn)) ; 
+// Fespace
+fespace Uh(Th, P1b);
+Uh u, v;
+Uh uu, vv;
+
+fespace Ph(Th, P1);
+Ph p, pp;
+
+// Problem
+solve stokes ([u, v, p], [uu, vv, pp],solver = UMFPACK)
+    = int2d(Th)(
+          dx(u)*dx(uu)
+        + dy(u)*dy(uu)
+        + dx(v)*dx(vv)
+        + dy(v)*dy(vv)
+        + dx(p)*uu
+        + dy(p)*vv
+        - pp*(dx(u) + dy(v))  - 1e-6*p*pp
+      )
+        //+int2d(Th)(f1*uu+f2*vv)
+  + on(Gamma1, Gamma2, Gamma3, u=1 , v=0)
+    ;
+
+
+    //erreurs H1 
+    //eH1U = sqrt(int2d(Th)( (u-ue)^2+(v-ve)^2 ) + int2d( (dx(u)-dx(ue))^2+ (dx(v)+dx(ve)^2) ) + int2d( (dy(u)-dy(ue))^2+ (dy(v)+dy(ve)^2) ) ) ; 
+    //eH1P =  sqrt(int2d(Th)( (p-pe)^2 ) + int2d( (dx(p)-dx(pe))^2) ) + int2d( (dy(p)-dy(pe))^2) ) ; 
+
+
+
+// Plot
+plot([u, v], p, wait=1);

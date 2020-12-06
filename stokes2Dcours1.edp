@@ -1,0 +1,47 @@
+// Parameters
+int nn = 30;
+
+//mesh Th = square(nn, nn); 
+
+border Gamma1(t=0,1){x=t ; y=0;} ; 
+border Gamma2(t=0,1){x=1-t;y=t;} ; 
+border Gamma3(t=0,1){x=0; y=1-t;} ; 
+
+mesh Th = buildmesh(Gamma1(nn)+Gamma2(nn)+Gamma3(nn)) ; 
+//plot(Th, wait=1, ps="Triangle_stokes.eps"); 
+//	***	DEFINE FUNCTION VOL:
+
+real f1=1.0,f2=1.0;//	***	DEFINE FUNCTION VOL:
+
+// Fespace
+fespace Uh(Th, P1b);
+Uh u, v ;
+Uh uu, vv; 
+Uh ue , ve ;// les solution exactes en vitesses
+ue = x ; ve = -y ; 
+
+ 
+
+fespace Ph(Th, P1);
+Ph p, pp; 
+Ph pe ; // la pression exacte 
+pe = x+y+ 2* int2d(Th)(x+y) ; 
+// Problem
+solve stokes ([u, v, p], [uu, vv, pp],solver = UMFPACK)
+    = int2d(Th)(
+          dx(u)*dx(uu)
+        + dy(u)*dy(uu)
+        + dx(v)*dx(vv)
+        + dy(v)*dy(vv)
+        + dx(p)*uu
+        + dy(p)*vv
+        + pp*(dx(u) + dy(v))  -1e-6*p*pp
+      )
+	+int2d(Th)(f1*uu+f2*vv)
+  + on(Gamma1, Gamma2, Gamma3, u=ue, v=ve  );
+
+
+// Plot
+plot([u,v],p, wait=1 , ps="solve_30_triangle.eps"); 
+//plot([ue,ve],pe,wait=1)
+ 

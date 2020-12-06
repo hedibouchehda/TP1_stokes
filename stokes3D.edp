@@ -1,0 +1,157 @@
+
+load "msh3" ;
+
+int nn ;
+real penal ;  
+ 
+
+
+//Fichier d'erreur  
+ofstream errpasfile("error_pas_3D.txt") ; 
+ofstream errpenalfile("error_penal_3D.txt") ; 
+
+
+//évolution de l'érreur H1 en fonction du pas de maillage 
+for (int k=0 ; k<4 ; k++)  
+{
+    nn= 10*2^k ; 
+    mesh3 Th = cube(nn,nn,nn);
+    real f1=1.0,f2=1.0,f3=1.0;
+
+
+    fespace Uh(Th, P1b);
+    Uh u, v , w ;
+    Uh uu, vv , ww;
+    Uh ue =x , ve=y , we = -2*z ; 
+
+    fespace Ph(Th, P1);
+    Ph p, pp;
+    Ph pe = x + y + z - int3d(Th)(x+y+z) ;  
+
+    // Problem
+    solve stokes ([u, v,w, p], [uu, vv,ww, pp],solver = UMFPACK)
+        = int3d(Th)(
+              dx(u)*dx(uu)
+            + dy(u)*dy(uu)
+            + dz(u)*dz(uu)
+            + dx(v)*dx(vv)
+            + dy(v)*dy(vv)
+            + dz(v)*dz(vv)
+            + dx(w)*dx(ww) 
+            + dy(w)*dy(ww)
+            + dz(w)*dz(ww)
+            + dx(p)*uu
+            + dy(p)*vv
+            + dz(p)*ww
+            + pp*(dx(u) + dy(v) + dz(w))  - 1e-6*p*pp
+      )
+	    +int3d(Th)(f1*uu+f2*vv+f3*ww)
+    + on(1,2,3,4,5,6, u=ue,v=ve,w=we);
+
+    real errH1U , errH1P ;
+    errH1U=sqrt( 
+        int3d(Th)( (u-ue)^2 + (v-ve)^2 + (w-we)^2 ) 
+        + int3d(Th)( (dx(u)-dx(ue))^2 + (dx(v)-dx(ve))^2 + (dx(w)-dx(we))^2 ) 
+        + int3d(Th)( (dy(u)-dy(ue))^2 + (dy(v)-dy(ve))^2 + (dy(w)-dy(we))^2)
+        + int3d(Th)( (dz(u)-dz(ue))^2 + (dz(v)-dz(ve))^2 + (dz(w)-dz(we))^2)
+        );
+
+    errH1P=sqrt( 
+        int3d(Th)( (p-pe)^2 ) 
+        + int3d(Th)((dx(p)-dx(pe))^2 + (dy(p)-dy(pe))^2 + (dz(p)-dz(pe))^2)
+        );
+    
+    errpasfile<<1./nn<<" "<<errH1U<<" "<<errH1P<<endl ; 
+
+}
+
+//évolution de l'erreur H2 en fonction du paramètre de pénalisation 
+for (int k=6 ; k<11 ; k++)  
+{
+    nn=30 ; 
+    penal = 10.0^(-k) ;  
+    mesh3 Th = cube(nn,nn,nn);
+    real f1=1.0,f2=1.0,f3=1.0;
+
+    fespace Uh(Th, P1b);
+    Uh u , v , w ;
+    Uh uu , vv , ww;
+    Uh ue =x , ve=y , we = -2*z ; 
+
+    fespace Ph(Th, P1);
+    Ph p, pp;
+    Ph pe = x + y + z - int3d(Th)(x+y+z) ;  
+
+    // Problem
+    solve stokes ([u, v,w, p], [uu, vv,ww, pp],solver = UMFPACK)
+        = int3d(Th)(
+              dx(u)*dx(uu)
+            + dy(u)*dy(uu) if (k==3)
+    {
+        plot([u,v],p, wait=1 ) ; 
+    }
+            + dy(w)*dy(ww)
+            + dz(w)*dz(ww)
+            + dx(p)*uu
+            + dy(p)*vv
+            + dz(p)*ww
+            + pp*(dx(u) + dy(v) + dz(w))  - penal*p*pp
+      )
+	    +int3d(Th)(f1*uu+f2*vv+f3*ww)
+    + on(1,2,3,4,5,6, u=ue,v=ve,w=we);
+
+    real errH1U , errH1P ;
+    errH1U=sqrt( 
+        int3d(Th)( (u-ue)^2 + (v-ve)^2 + (w-we)^2 ) 
+        + int3d(Th)( (dx(u)-dx(ue))^2 + (dx(v)-dx(ve))^2 + (dx(w)-dx(we))^2) 
+        + int3d(Th)( (dy(u)-dy(ue))^2 + (dy(v)-dy(ve))^2 + (dy(w)-dy(we))^2)
+        + int3d(Th)( (dz(u)-dz(ue))^2 + (dz(v)-dz(ve))^2 + (dz(w)-dz(we))^2)
+        );
+
+    errH1P=sqrt( 
+        int3d(Th)( (p-pe)^2 ) 
+        + int3d(Th)( (dx(p)-dx(pe))^2 + (dy(p)-dy(pe))^2 + (dz(p)-dz(pe))^2 )
+        );
+    
+    errpasfile<<penal<<" "<<errH1U<<" "<<errH1P<<endl ; 
+
+}
+
+
+
+//pour la figure
+nn=30
+mesh3 Th = cube(nn,nn,nn);
+real f1=1.0,f2=1.0,f3=1.0;
+
+
+fespace Uh(Th, P1b);
+Uh u, v , w ;
+Uh uu, vv , ww;
+Uh ue =x , ve=y , we = -2*z ; 
+
+fespace Ph(Th, P1);
+Ph p, pp;
+Ph pe = x + y + z - int3d(Th)(x+y+z) ;  
+
+// Problem
+solve stokes ([u, v,w, p], [uu, vv,ww, pp],solver = UMFPACK)
+    = int3d(Th)(
+          dx(u)*dx(uu)
+        + dy(u)*dy(uu)
+        + dz(u)*dz(uu)
+        + dx(v)*dx(vv)
+        + dy(v)*dy(vv)
+        + dz(v)*dz(vv)
+        + dx(w)*dx(ww) 
+        + dy(w)*dy(ww)
+        + dz(w)*dz(ww)
+        + dx(p)*uu
+        + dy(p)*vv
+        + dz(p)*ww
+        + pp*(dx(u) + dy(v) + dz(w))  - 1e-6*p*pp
+      )
+	+int3d(Th)(f1*uu+f2*vv+f3*ww)
+  + on(1,2,3,4,5,6, u=ue,v=ve,w=we); 
+
+plot([u,v,w],p,wait=1, ps="stokes_cube.eps") ; 
